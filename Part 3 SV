@@ -1,0 +1,71 @@
+cd AmpliconArchitect_reconstructions
+
+rm -f all_chr12_edges.txt
+
+find . -type f -name "*_graph.txt" -print0 \
+  | while IFS= read -r -d $'\0' G; do
+      echo "=== $G ===" >> all_chr12_edges.txt
+      grep -E '^(source|concordant|discordant)' "$G" \
+        | grep "chr12" \
+        >> all_chr12_edges.txt
+    done
+
+wc -l all_chr12_edges.txt
+
+awk '/^(source|concordant|discordant)/ {
+      split($2,p,/[:\+\-]/)
+      if (p[1]=="chr12" && p[4]=="chr12") {
+        print p[2]
+        print p[5]
+      }
+    }' all_chr12_edges.txt \
+  > chr12_positions.txt
+wc -l chr12_positions.txt
+
+awk '/^(source|concordant|discordant)/ {
+      if (match($2,/chr12:[0-9]+([+\-])->chr12:[0-9]+([+\-])/,m)) {
+        print m[1] m[2]
+      }
+    }' all_chr12_edges.txt \
+  > chr12_orientations.txt
+wc -l chr12_orientations.txt
+
+import numpy as np
+import matplotlib.pyplot as plt
+from collections import Counter
+
+positions = np.loadtxt("chr12_positions.txt", dtype=int)
+
+with open("chr12_orientations.txt") as f:
+    orientations = [line.strip() for line in f if line.strip()]
+
+cnt = Counter(orientations)
+for key in ["++","+-","-+","--"]:
+    cnt.setdefault(key, 0)
+
+plt.figure(figsize=(3,3))
+plt.bar(cnt.keys(), cnt.values())
+plt.ylabel("Count")
+plt.title("Distribution of SV Orientations on chr12")
+plt.tight_layout()
+plt.savefig("fig3_orientations.png")
+
+
+plt.figure(figsize=(6,3))
+plt.hist(positions, bins=100, range=(0, 133_000_000))
+plt.xlabel("Genomic Coordinate on chr12 (bp)")
+plt.ylabel("Breakpoint Count")
+plt.title("Breakpoint Density on chromosome 12")
+plt.tight_layout()
+plt.savefig("fig3_density.png")
+
+
+y = np.zeros_like(positions)
+plt.figure(figsize=(6,1))
+plt.scatter(positions, y, s=5, alpha=0.3)
+plt.yticks([])
+plt.xlim(0, 133_000_000)
+plt.xlabel("Genomic Coordinate on chr12")
+plt.title("All SV Junctions on chr12")
+plt.tight_layout()
+plt.savefig("fig3_barcode.png")
