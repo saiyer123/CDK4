@@ -1,0 +1,38 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+positions = np.loadtxt("chr12_positions.txt", dtype=int)
+
+plt.figure(figsize=(6,2.5))
+plt.hist(
+    positions,
+    bins=np.linspace(0, 133_000_000, 50),
+    color='gray'
+)
+plt.xlabel("Genomic Coordinate on chr12 (bp)")
+plt.ylabel("Breakpoint Count")
+plt.title("Breakpoint Density on chromosome 12")
+plt.tight_layout()
+plt.show()
+
+y = np.zeros_like(positions)
+plt.figure(figsize=(6,1))
+plt.scatter(positions, y, s=5, c='blue', alpha=0.3)
+plt.yticks([])
+plt.xlim(0, 133_000_000)
+plt.xlabel("Genomic Coordinate on chr12")
+plt.title("All SV Junctions on chr12")
+plt.tight_layout()
+plt.show()
+
+line = np.loadtxt("chr12_oriented_counts.txt", dtype=str).reshape(1,8)[0]
+orientations = line[0::2]
+counts       = line[1::2].astype(int)
+
+plt.figure(figsize=(4,2.5))
+plt.bar(orientations, counts, color='gray')
+plt.xlabel("Orientation")
+plt.ylabel("Count")
+plt.title("Distribution of SV Orientations on chr12")
+plt.tight_layout()
+plt.show()
